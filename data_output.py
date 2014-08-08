@@ -6,14 +6,21 @@ from file_cache import JSONFileCache
 from collections import defaultdict
 from sqlalchemy.orm import sessionmaker, joinedload_all
 
+# store and load data here
+data_dir = os.path.join(os.getcwd(), 'data')
+chains_dir = os.path.join(data_dir, 'chains')
+
 def output_chains(id_lookup_list):
 
     output_data = {}
 
-    for chain_id, venue_list in id_lookup_list:
+    with(open(os.path.join(chains_dir, 'chains_list.json')) as out_file:
+        json.dump(id_lookup_list.iterkeys(), out_file)    
 
-        output_data['chain_id'] = chain_id
-        output_data['venues'] = []
+    for chain_id, venue_list in id_lookup_list.iteritems():
+
+        chain_data = {}
+        chain_data['venues'] = venue_list
 
         num_users = 0
         unique_users = set()
@@ -41,10 +48,15 @@ def output_chains(id_lookup_list):
             if count > name_count:
                 max_name = name
 
-        output_data['name'] = max_name.replace(',', '')
-        output_data['num_users'] = num_users
-        output_data['num_checkins'] = num_checkins
-        output_data['unique_users'] = len(unique_users)
+        chain_data['name'] = max_name.replace(',', '')
+        chain_data['num_users'] = num_users
+        chain_data['num_checkins'] = num_checkins
+        chain_data['unique_users'] = len(unique_users)
+
+        with(open(os.path.join(chains_dir, '%s.json' % chain_id)) as out_file:
+            json.dump(chain_data, out_file)
+
+        output_data['chain_id'] = chain_data
 
     return output_data
 
@@ -56,4 +68,9 @@ if __name__ == '__main__':
 
     with open(os.path.join(data_dir, 'chains_stats.json'), 'w') as out_file:
         json.dump(output_data, out_file)
+
+    with open(os.path.join(data_dir, 'chains_stats.csv'), 'w') as out_file:
+        for chain, data in output_data.iteritems():
+            out_file.write('%s,%s,%d,%d,%d,%d\n' % (chain, data['name'], len(data['venues']), data['num_users'], data['num_checkins'], data['unique_users']))
+
 

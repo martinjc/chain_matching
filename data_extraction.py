@@ -2,6 +2,7 @@ import os
 import json
 
 from tables import *
+from urlparse import urlparse
 from file_cache import JSONFileCache
 from collections import defaultdict
 from sqlalchemy.orm import sessionmaker, joinedload_all
@@ -35,7 +36,7 @@ def get_needed_venue_data():
             venue_twitter = ''
             venue_location = ''
             if venue_data.get('url', False):
-                venue_url = venue_data['url']
+                venue_url = urlparse(venue_data['url']).netloc
             if venue_data.get('contact', False):
                 if venue_data['contact'].get('twitter', False):
                     venue_twitter = venue_data['contact']['twitter']

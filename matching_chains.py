@@ -8,8 +8,6 @@ from Levenshtein import ratio
 from collections import defaultdict
 from itertools import combinations
 
-
-
 def match_chains(venues_data):
 
     chain_lookup = defaultdict(str)
@@ -17,48 +15,48 @@ def match_chains(venues_data):
 
     for i, v1 in enumerate(venues_data):
 
-        print '%d, %s' % (i, v1['name'])
+        print '%d, %s' % (i, v1['name']),
 
         chain_id = ''
 
-        # have we already found a chain that this venue belogs to?
+        # have we already found a chain that this venue belongs to?
         if chain_lookup.get(v1['foursq_id'], False):
             chain_id = chain_lookup[v1['foursq_id']]
+            id_lookup[chain_id].add(v1['foursq_id'])
+            print '\t\t\t\t\t\t\t\t\talready chained'
         # if not, it may be a candidate for a new chain
         else:
             chain_id = chain_id = uuid.uuid4().hex
-
-        distances = defaultdict(float)
-
-        for v2 in venues_data[i+1:]:
-
-            if not chain_lookup.get(v2['foursq_id'], False):
-
-                name_distance = ratio(v1['name'], v2['name'])
-                if v1['url'] or v2['url']:
-                    url_distance = ratio(v1['url'], v2['url'])
-                else:
-                    url_distance = 0
-                if v1['twitter'] or v2['twitter']:
-                    twitter_distance = ratio(v1['twitter'], v2['twitter'])
-                else:
-                    twitter_distance = 0
-
-                total_distance = name_distance + url_distance + twitter_distance
-
-                distances[v2['foursq_id']] = total_distance
-
-        max_distance = max(distances.itervalues())
-        max_venue = max(distances.iteritems(), key=operator.itemgetter(1))[0]
-        
-
-        if max_distance > 2.0:
-            print v1['foursq_id'], max_distance, max_venue
-            chain_lookup[v1['foursq_id']] = chain_id
-            chain_lookup[max_venue] = chain_id
-
             id_lookup[chain_id].add(v1['foursq_id'])
-            id_lookup[chain_id].add(max_venue)
+            print '\t\t\t\t\t\t\t\t\tsearching'
+            for v2 in venues_data[i+1:]:
+
+                if not chain_lookup.get(v2['foursq_id'], False):
+
+                    name_distance = ratio(v1['name'], v2['name'])
+                    if v1['url'] or v2['url']:
+                        if v1['url'] == v2['url'] and v1['url']:
+                            url_distance = 0.5
+                        else:
+                            url_distance = 0
+                    else:
+                        url_distance = 0
+                    if v1['twitter'] or v2['twitter']:
+                        if v1['twitter'] == v2['twitter'] and v1['twitter']:
+                            twitter_distance = 0.5
+                        else:
+                            twitter_distance = 0    
+                    else:
+                        twitter_distance = 0
+
+                    total_distance = name_distance + url_distance + twitter_distance
+
+                    if total_distance >= 0.9:
+
+                        print "\t%f, %s" % (total_distance, v2['name'])
+
+                        chain_lookup[v2['foursq_id']] = chain_id
+                        id_lookup[chain_id].add(v2['foursq_id'])
 
     return chain_lookup, id_lookup
 
