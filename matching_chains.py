@@ -14,44 +14,38 @@ def match_chains(venues_data):
     chain_lookup = defaultdict(str)
     id_lookup = defaultdict(set)
 
-    combos = combinations(venues_data, 2)
+    for i, v1 in enumerate(venues_data):
 
-    num_combos = math.factorial(len(venues_data))/(math.factorial(2)*math.factorial(len(venues_data)-2))
+        print '%d' % (i)
 
-    for i, combo in enumerate(combos):
+        for v2 in venues_data[i+1:]:
 
-        if i % 1000 == 0:
-            print '%d/%d' % (i, num_combos)
-
-        v1 = combo[0]
-        v2 = combo[1]
-
-        name_distance = ratio(v1['name'], v2['name'])
-        if v1['url'] or v2['url']:
-            url_distance = ratio(v1['url'], v2['url'])
-        else:
-            url_distance = 0
-        if v1['twitter'] or v2['twitter']:
-            twitter_distance = ratio(v1['twitter'], v2['twitter'])
-        else:
-            twitter_distance = 0
-
-        total_distance = name_distance + url_distance + twitter_distance
-
-        if total_distance > 0.9:
-
-            if chain_lookup.get(v1['foursq_id'], False):
-                chain_id = chain_lookup[v1['foursq_id']]
-            elif chain_lookup.get(v2['foursq_id'], False):
-                chain_id = chain_lookup[v2['foursq_id']]
+            name_distance = ratio(v1['name'], v2['name'])
+            if v1['url'] or v2['url']:
+                url_distance = ratio(v1['url'], v2['url'])
             else:
-                chain_id = uuid.uuid4().hex
+                url_distance = 0
+            if v1['twitter'] or v2['twitter']:
+                twitter_distance = ratio(v1['twitter'], v2['twitter'])
+            else:
+                twitter_distance = 0
 
-            chain_lookup[v1['foursq_id']] = chain_id
-            chain_lookup[v2['foursq_id']] = chain_id
+            total_distance = name_distance + url_distance + twitter_distance
 
-            id_lookup[chain_id].add(v1['foursq_id'])
-            id_lookup[chain_id].add(v2['foursq_id'])
+            if total_distance > 0.9:
+
+                if chain_lookup.get(v1['foursq_id'], False):
+                    chain_id = chain_lookup[v1['foursq_id']]
+                elif chain_lookup.get(v2['foursq_id'], False):
+                    chain_id = chain_lookup[v2['foursq_id']]
+                else:
+                    chain_id = uuid.uuid4().hex
+
+                chain_lookup[v1['foursq_id']] = chain_id
+                chain_lookup[v2['foursq_id']] = chain_id
+
+                id_lookup[chain_id].add(v1['foursq_id'])
+                id_lookup[chain_id].add(v2['foursq_id'])
 
     return chain_lookup, id_lookup
 
