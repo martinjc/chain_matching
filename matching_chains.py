@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import math
 
 from Levenshtein import ratio
 from collections import defaultdict
@@ -15,10 +16,13 @@ def match_chains(venues_data):
 
     combos = combinations(venues_data, 2)
 
+    num_combos = math.factorial(len(venues_data))/(math.factorial(2)*math.factorial(len(venues_data)-2))
+
     for i, combo in enumerate(combos):
 
-        print i
-        
+        if i % 1000 == 0:
+            print '%d/%d' % (i, num_combos)
+
         v1 = combo[0]
         v2 = combo[1]
 
@@ -66,4 +70,3 @@ if __name__ == '__main__':
 
     with open(os.path.join(data_dir, 'id_lookup.json'), 'w') as out_file:
         json.dump(id_lookup, out_file)
-
