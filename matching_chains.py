@@ -23,7 +23,7 @@ def match_chains(venues_data):
         if chain_lookup.get(v1['foursq_id'], False):
             chain_id = chain_lookup[v1['foursq_id']]
             id_lookup[chain_id].add(v1['foursq_id'])
-            print '\t\t\t\t\t\t\t\t\talready chained'
+            print '\t\t\t\t\t\talready chained'
         # if not, it may be a candidate for a new chain
         else:
             chain_id = chain_id = uuid.uuid4().hex
@@ -73,5 +73,10 @@ if __name__ == '__main__':
     with open(os.path.join(data_dir, 'chain_lookup.json'), 'w') as out_file:
         json.dump(chain_lookup, out_file)
 
+    id_lookup_out = defaultdict(list)
+
+    for chain, venues in id_lookup.iteritems():
+        id_lookup_out[chain] = list(venues)
+
     with open(os.path.join(data_dir, 'id_lookup.json'), 'w') as out_file:
-        json.dump(id_lookup, out_file)
+        json.dump(id_lookup_out, out_file)

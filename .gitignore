@@ -1,2 +1,3 @@
 data/*
 tables.*
+*_test.py

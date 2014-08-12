@@ -1,6 +1,8 @@
 import os
 import json
 
+import codecs
+
 from tables import *
 from file_cache import JSONFileCache
 from collections import defaultdict
@@ -10,12 +12,18 @@ from sqlalchemy.orm import sessionmaker, joinedload_all
 data_dir = os.path.join(os.getcwd(), 'data')
 chains_dir = os.path.join(data_dir, 'chains')
 
+# open the database and grab all the venues
+Session = sessionmaker(bind=engine)
+session = Session()
+
+cache = JSONFileCache()
+
 def output_chains(id_lookup_list):
 
     output_data = {}
 
-    with(open(os.path.join(chains_dir, 'chains_list.json')) as out_file:
-        json.dump(id_lookup_list.iterkeys(), out_file)    
+    #with(open(os.path.join(chains_dir, 'chains_list.json'), 'w')) as out_file:
+    #    json.dump(list(id_lookup_list.iterkeys()), out_file)    
 
     for chain_id, venue_list in id_lookup_list.iteritems():
 
@@ -30,8 +38,10 @@ def output_chains(id_lookup_list):
 
         for venue in venue_list:
 
-            venue = session.query(Venue).filter(Venue.foursq_id == v['foursq_id']).all()[0]
-            visits = session.query(Venuesvisited).filter(Venuesvisited.venue == venue).all()
+            v = session.query(Venue).filter(Venue.foursq_id == venue).all()[0]
+            visits = session.query(Venuesvisited).filter(Venuesvisited.venue == v).all()
+
+            venue_json = cache.get_json('%s.json' % venue)['response']['venue'] 
 
             num_users += len(visits)
             
@@ -40,12 +50,13 @@ def output_chains(id_lookup_list):
                 num_checkins += visit.num_visits
                 unique_users.add(visit.foursquser.id)
 
-            venue_names[venue['name']] += 1
+            venue_names[venue_json['name']] += 1
 
         name_count = 0
         max_name = ''
         for name, count in venue_names.iteritems():
             if count > name_count:
+                name_count = count
                 max_name = name
 
         chain_data['name'] = max_name.replace(',', '')
@@ -53,10 +64,10 @@ def output_chains(id_lookup_list):
         chain_data['num_checkins'] = num_checkins
         chain_data['unique_users'] = len(unique_users)
 
-        with(open(os.path.join(chains_dir, '%s.json' % chain_id)) as out_file:
-            json.dump(chain_data, out_file)
+        #with(open(os.path.join(chains_dir, '%s.json' % chain_id), 'w')) as out_file:
+        #    json.dump(chain_data, out_file)
 
-        output_data['chain_id'] = chain_data
+        output_data[chain_id] = chain_data
 
     return output_data
 
@@ -69,8 +80,9 @@ if __name__ == '__main__':
     with open(os.path.join(data_dir, 'chains_stats.json'), 'w') as out_file:
         json.dump(output_data, out_file)
 
-    with open(os.path.join(data_dir, 'chains_stats.csv'), 'w') as out_file:
+    with codecs.open(os.path.join(data_dir, 'chains_stats.csv'), 'w', 'utf-8') as out_file:
         for chain, data in output_data.iteritems():
-            out_file.write('%s,%s,%d,%d,%d,%d\n' % (chain, data['name'], len(data['venues']), data['num_users'], data['num_checkins'], data['unique_users']))
+            print chain, data['name']
+            out_file.write('%s,%s,%d,%d,%d,%d\n'.encode('utf-8') % (chain, data['name'], len(data['venues']), data['num_users'], data['num_checkins'], data['unique_users']))
 
 
